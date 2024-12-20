@@ -1,6 +1,8 @@
 const User = require("../models/user.model");
 const { createUser } = require("../services/user.service");
 const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
+const BlackList = require("../models/blacklistToken.model");
 
 exports.signUp = async (req, res, next) => {
   try {
@@ -57,10 +59,34 @@ exports.login = async (req, res, next) => {
     }
     const token = existingUser.generateAuthToken();
 
-    res.status(200).json({
+    res.cookie("token", token).status(200).json({
       token,
       existingUser,
     });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+
+exports.profile = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      user: req.user,
+    });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+
+exports.logout = async (req, res, next) => {
+  try {
+    res.clearCookie("token");
+
+    const token = req.cookies.token || req.authorization.split(" ")[1];
+
+    await BlackList.create({ token });
+
+    res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(400).send(error.message);
   }
