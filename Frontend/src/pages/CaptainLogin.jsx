@@ -1,17 +1,18 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FaEyeSlash } from "react-icons/fa";
 import { FaEye } from "react-icons/fa";
 import UberLogo from "../Logo.png";
 import { Link } from "react-router";
+import { toast } from "react-toastify";
+import { UserContext } from "../context/userContext";
+import axios from "axios";
 
 const CaptainLogin = () => {
   const [showPassword, setshowPassword] = useState(false);
-
+  const { setUserData, settoken } = useContext(UserContext);
   const [loginFormData, setloginFormData] = useState({
     email: "",
     password: "",
-    firstname: "",
-    lastname: "",
   });
 
   const handleInputChange = (e) => {
@@ -27,23 +28,46 @@ const CaptainLogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // if (!loginFormData.email && !loginFormData.password) {
-    //   alert("All fields are required");
-    // }
+    if (!loginFormData.email && !loginFormData.password) {
+      alert("All fields are required");
+    }
 
-    // try {
-    //   const response = await axios.post(
-    //     "http://localhost:4000/api/user/login",
-    //     JSON.stringify(loginFormData),
-    //     {
-    //       headers: {
-    //         "Content-Type": "application/json", // Sending JSON data
-    //       },
-    //     }
-    //   );
+    try {
+      const response = await axios.post(
+        "http://localhost:4000/api/user/login",
+        JSON.stringify(loginFormData),
+        {
+          headers: {
+            "Content-Type": "application/json", // Sending JSON data
+          },
+        }
+      );
 
-    // } catch (err) {
-    // }
+      const data = response.data;
+
+      if (!data.success) {
+        toast.error(data.message, {
+          className: "w-[90%] mx-auto my-4",
+        });
+        return;
+      }
+      setUserData(data.existingUser);
+      localStorage.setItem("token", data.token);
+      settoken(data.token);
+      setloginFormData({
+        email: "",
+        password: "",
+      });
+      toast.success(data.message, {
+        className: "w-[90%] mx-auto my-4",
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      //   console.log(err.response.data.message);
+      toast.error(err.response.data.message, {
+        className: "w-[90%] mx-auto my-4",
+      });
+    }
   };
   return (
     <div className="py-4 px-6 w-full h-screen">

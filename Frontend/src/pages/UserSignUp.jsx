@@ -1,13 +1,18 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FaEyeSlash } from "react-icons/fa";
 import { FaEye } from "react-icons/fa";
 import UberLogo from "../Logo.png";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { ToastContainer, toast } from "react-toastify";
+import { UserContext } from "../context/userContext";
+import axios from "axios";
 
 const UserSignUp = () => {
+  const { setUserData, settoken } = useContext(UserContext);
   const [showPassword, setshowPassword] = useState(false);
+  const navigate = useNavigate();
 
-  const [loginFormData, setloginFormData] = useState({
+  const [signUpFormData, setsignUpFormData] = useState({
     email: "",
     password: "",
     firstname: "",
@@ -16,7 +21,7 @@ const UserSignUp = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setloginFormData((prev) => {
+    setsignUpFormData((prev) => {
       return {
         ...prev,
         [name]: value,
@@ -27,24 +32,60 @@ const UserSignUp = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    console.log(loginFormData);
-    // if (!loginFormData.email && !loginFormData.password) {
-    //   alert("All fields are required");
-    // }
+    if (!signUpFormData.email && !signUpFormData.password) {
+      toast.error("All fields are required", {
+        className: "w-[90%] mx-auto my-4",
+      });
+    }
 
-    // try {
-    //   const response = await axios.post(
-    //     "http://localhost:4000/api/user/login",
-    //     JSON.stringify(loginFormData),
-    //     {
-    //       headers: {
-    //         "Content-Type": "application/json", // Sending JSON data
-    //       },
-    //     }
-    //   );
+    const userData = {
+      fullname: {
+        firstname: signUpFormData.firstname,
+        lastname: signUpFormData.lastname,
+      },
+      email: signUpFormData.email,
+      password: signUpFormData.password,
+    };
 
-    // } catch (err) {
-    // }
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/user/signUp`,
+        JSON.stringify(userData),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = response.data;
+
+      if (!data.success) {
+        toast.error(data.message, {
+          className: "w-[90%] mx-auto my-4",
+        });
+        return;
+      }
+
+      setUserData(data.newUser);
+      localStorage.setItem("token", data.token);
+      settoken(data.token);
+      setsignUpFormData({
+        email: "",
+        password: "",
+        firstname: "",
+        lastname: "",
+      });
+      toast.success(data.message, {
+        className: "w-[90%] mx-auto my-4",
+      });
+
+      navigate("/login");
+    } catch (err) {
+      toast.error(err.response.data.message, {
+        className: "w-[90%] mx-auto my-4",
+      });
+    }
   };
   return (
     <div className="py-4 px-6 w-full h-screen">
@@ -65,7 +106,7 @@ const UserSignUp = () => {
                 className="bg-[#eeeeee] px-4 py-2 rounded-md w-[48%]"
                 id="firstname"
                 name="firstname"
-                value={loginFormData.firstname}
+                value={signUpFormData.firstname}
                 onChange={handleInputChange}
               />
               <input
@@ -74,7 +115,7 @@ const UserSignUp = () => {
                 className="bg-[#eeeeee] px-4 py-2 rounded-md w-[48%]"
                 id="lastname"
                 name="lastname"
-                value={loginFormData.lastname}
+                value={signUpFormData.lastname}
                 onChange={handleInputChange}
               />
             </div>
@@ -90,7 +131,7 @@ const UserSignUp = () => {
               className="bg-[#eeeeee] px-4 py-2 rounded-md w-full"
               id="email"
               name="email"
-              value={loginFormData.email}
+              value={signUpFormData.email}
               onChange={handleInputChange}
             />
           </div>
@@ -107,7 +148,7 @@ const UserSignUp = () => {
                 placeholder="password"
                 className="bg-[#eeeeee] px-4 py-2 rounded-md w-full"
                 name="password"
-                value={loginFormData.password}
+                value={signUpFormData.password}
                 onChange={handleInputChange}
               />
               {showPassword ? (
@@ -129,7 +170,7 @@ const UserSignUp = () => {
               type="submit"
               className="bg-black text-white w-full text-center py-4 px-8 rounded-lg"
             >
-              SignUp
+              Create Account
             </button>
 
             <div className="flex flex-row items-center justify-center gap-1">

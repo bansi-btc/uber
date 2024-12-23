@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FaEyeSlash } from "react-icons/fa";
 import { FaEye } from "react-icons/fa";
 import UberLogo from "../Logo.png";
-import { Link } from "react-router";
+import { ToastContainer, toast } from "react-toastify";
+import { Link, useNavigate } from "react-router";
 import axios from "axios";
+import { UserContext } from "../context/userContext";
 
 const UserLogin = () => {
   const [showPassword, setshowPassword] = useState(false);
+  const { setUserData, settoken } = useContext(UserContext);
+  const navigate = useNavigate();
 
   const [loginFormData, setloginFormData] = useState({
     email: "",
@@ -31,7 +35,7 @@ const UserLogin = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/user/login",
+        `${import.meta.env.VITE_BASE_URL}/api/user/login`,
         JSON.stringify(loginFormData),
         {
           headers: {
@@ -39,8 +43,32 @@ const UserLogin = () => {
           },
         }
       );
+
+      const data = response.data;
+
+      console.log(data);
+
+      if (!data.success) {
+        toast.error(data.message, {
+          className: "w-[90%] mx-auto my-4",
+        });
+        return;
+      }
+      setUserData(data.existingUser);
+      localStorage.setItem("token", data.token);
+      settoken(data.token);
+      setloginFormData({
+        email: "",
+        password: "",
+      });
+      toast.success(data.message, {
+        className: "w-[90%] mx-auto my-4",
+      });
+      navigate("/dashboard");
     } catch (err) {
-      console.log(err);
+      toast.error(err.response.data.message, {
+        className: "w-[90%] mx-auto my-4",
+      });
     }
   };
   return (
